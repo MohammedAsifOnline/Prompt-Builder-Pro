@@ -1,6 +1,5 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
-import { GeminiResponse, PromptType } from '../types';
+import { GeminiResponse, PromptType } from '../../types';
 
 const responseSchema = {
   type: Type.OBJECT,
@@ -21,19 +20,6 @@ const responseSchema = {
   required: ["detectedLanguage", "constructiveEnglishPrompt", "translatedPrompt"],
 };
 
-const getSystemInstruction = (promptType: PromptType, targetLanguage: string): string => {
-    const translationTask = targetLanguage === 'none'
-        ? "Do not perform any translation. Set 'translatedPrompt' to empty string."
-        : `Translate ONLY the generated constructive prompt into the target language (code: ${targetLanguage}).`;
-
-    if (promptType === PromptType.CONSTRUCTIVE) {
-        return `You are a world-class AI Prompt Engineer. Transform the user's idea into a structured prompt with Role, Objective, Context, and Instructions. Use deep reasoning to optimize.
-        ${translationTask}`;
-    }
-    return `Create a polished, simple standard prompt.
-    ${translationTask}`;
-}
-
 export const generatePromptAndTranslation = async (
   userInput: string,
   targetLanguage: string,
@@ -42,29 +28,21 @@ export const generatePromptAndTranslation = async (
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
   try {
-    const systemInstruction = getSystemInstruction(promptType, targetLanguage);
-    const contents = `User Idea: "${userInput}"\nTarget: "${targetLanguage}"`;
-
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
-      contents: contents,
+      contents: `User Idea: "${userInput}"`,
       config: {
-        systemInstruction,
         responseMimeType: "application/json",
         responseSchema: responseSchema,
-        temperature: 0.8,
         thinkingConfig: { thinkingBudget: 16384 },
-        maxOutputTokens: 20000, 
       },
     });
 
     const result = response.text;
-    if (!result) {
-      throw new Error("AI returned an empty response.");
-    }
+    if (!result) throw new Error("Empty response");
     return JSON.parse(result.trim()) as GeminiResponse;
   } catch (error) {
     console.error("Gemini API Error:", error);
-    throw new Error("AI Reasoning failed. Check API Key or Connection.");
+    throw new Error("AI Reasoning failed.");
   }
 };
