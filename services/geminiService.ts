@@ -53,7 +53,6 @@ const getSystemInstruction = (promptType: PromptType, targetLanguage: string): s
         Ensure your tone is clear, creative, and professional. The output must be a valid JSON object matching the provided schema.`;
     }
 
-    // Standard Prompt Instruction
     return `You are an AI-powered multilingual creative assistant. Your goal is to transform a user's raw idea into a polished, standard English prompt and then translate it if requested.
     Tasks:
     1. Detect the input language of the user's idea.
@@ -69,17 +68,14 @@ export const generatePromptAndTranslation = async (
   targetLanguage: string,
   promptType: PromptType,
 ): Promise<GeminiResponse> => {
-  // Re-initialize to ensure the latest API key is used from environment variables
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
   try {
     const systemInstruction = getSystemInstruction(promptType, targetLanguage);
-
     const contents = targetLanguage === 'none'
       ? `User Idea: "${userInput}"`
       : `User Idea: "${userInput}"\nTarget Language: "${targetLanguage}"`;
 
-    // Use gemini-3-pro-preview for complex reasoning tasks like prompt engineering
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
       contents: contents,
@@ -88,14 +84,16 @@ export const generatePromptAndTranslation = async (
         responseMimeType: "application/json",
         responseSchema: responseSchema,
         temperature: 0.8,
-        // Incorporate thinking for better prompt construction quality
         thinkingConfig: { thinkingBudget: 16384 },
         maxOutputTokens: 20000, 
       },
     });
 
-    const jsonText = response.text.trim();
-    const parsedResponse = JSON.parse(jsonText) as GeminiResponse;
+    const jsonText = response.text;
+    if (!jsonText) {
+      throw new Error("AI returned an empty response.");
+    }
+    const parsedResponse = JSON.parse(jsonText.trim()) as GeminiResponse;
     return parsedResponse;
   } catch (error) {
     console.error("Error calling Gemini API:", error);

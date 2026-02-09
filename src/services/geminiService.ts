@@ -39,7 +39,6 @@ export const generatePromptAndTranslation = async (
   targetLanguage: string,
   promptType: PromptType,
 ): Promise<GeminiResponse> => {
-  // Uses injected process.env.API_KEY from Vite config
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
   try {
@@ -54,12 +53,16 @@ export const generatePromptAndTranslation = async (
         responseMimeType: "application/json",
         responseSchema: responseSchema,
         temperature: 0.8,
-        thinkingConfig: { thinkingBudget: 16384 }, // Enable reasoning
+        thinkingConfig: { thinkingBudget: 16384 },
         maxOutputTokens: 20000, 
       },
     });
 
-    return JSON.parse(response.text.trim()) as GeminiResponse;
+    const result = response.text;
+    if (!result) {
+      throw new Error("AI returned an empty response.");
+    }
+    return JSON.parse(result.trim()) as GeminiResponse;
   } catch (error) {
     console.error("Gemini API Error:", error);
     throw new Error("AI Reasoning failed. Check API Key or Connection.");
