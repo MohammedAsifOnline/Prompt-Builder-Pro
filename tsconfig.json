@@ -20,6 +20,6 @@
       "*": ["*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["*.ts", "*.tsx", "components/**/*.tsx", "services/**/*.ts"],
   "exclude": ["node_modules", "dist", "src"]
 }
