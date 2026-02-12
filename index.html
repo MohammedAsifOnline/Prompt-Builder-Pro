@@ -14,7 +14,14 @@
       h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', sans-serif; }
     </style>
     <script>
-      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      // Crucial: Configure Tailwind to use the 'class' strategy for dark mode
+      tailwind.config = {
+        darkMode: 'class',
+      }
+      
+      // Immediate theme application to prevent flash of unstyled content
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark')
       } else {
         document.documentElement.classList.remove('dark')

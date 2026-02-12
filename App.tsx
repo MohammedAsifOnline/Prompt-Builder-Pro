@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -8,35 +7,30 @@ import { InputMode, GeminiResponse, PromptType, Theme } from './types';
 import { SUPPORTED_LANGUAGES, MAX_WORDS } from './constants';
 import { generatePromptAndTranslation } from './services/geminiService';
 
-// Fix: Add type definitions for SpeechRecognition API to fix TypeScript errors
+// SpeechRecognition type definitions...
 interface SpeechRecognitionEvent extends Event {
     readonly resultIndex: number;
     readonly results: SpeechRecognitionResultList;
 }
-
 interface SpeechRecognitionResultList {
     readonly length: number;
     item(index: number): SpeechRecognitionResult;
     [index: number]: SpeechRecognitionResult;
 }
-
 interface SpeechRecognitionResult {
     readonly isFinal: boolean;
     readonly length: number;
     item(index: number): SpeechRecognitionAlternative;
     [index: number]: SpeechRecognitionAlternative;
 }
-
 interface SpeechRecognitionAlternative {
     readonly transcript: string;
     readonly confidence: number;
 }
-
 interface SpeechRecognitionErrorEvent extends Event {
     readonly error: string;
     readonly message: string;
 }
-
 interface SpeechRecognition extends EventTarget {
     continuous: boolean;
     interimResults: boolean;
@@ -48,18 +42,15 @@ interface SpeechRecognition extends EventTarget {
     start: () => void;
     stop: () => void;
 }
-
 interface SpeechRecognitionStatic {
     new(): SpeechRecognition;
 }
-
 declare global {
     interface Window {
         SpeechRecognition: SpeechRecognitionStatic;
         webkitSpeechRecognition: SpeechRecognitionStatic;
     }
 }
-
 
 const MicIcon = ({ isRecording }: { isRecording: boolean }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 transition-colors ${isRecording ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -77,8 +68,12 @@ const App: React.FC = () => {
     const [isRecording, setIsRecording] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [output, setOutput] = useState<GeminiResponse | null>(null);
-    const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || Theme.SYSTEM);
-
+    
+    // Initial theme from localStorage
+    const [theme, setTheme] = useState<Theme>(() => {
+        const saved = localStorage.getItem('theme') as Theme;
+        return saved || Theme.SYSTEM;
+    });
 
     const recognitionRef = useRef<SpeechRecognition | null>(null);
 
@@ -87,17 +82,19 @@ const App: React.FC = () => {
         setWordCount(words.length);
     }, [userInput]);
 
+    // Robust Theme Application
     useEffect(() => {
         const root = window.document.documentElement;
 
-        const applyTheme = () => {
-            if (theme === Theme.LIGHT) {
-                root.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-            } else if (theme === Theme.DARK) {
+        const updateTheme = () => {
+            if (theme === Theme.DARK) {
                 root.classList.add('dark');
                 localStorage.setItem('theme', 'dark');
-            } else { // SYSTEM
+            } else if (theme === Theme.LIGHT) {
+                root.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                // System Preference Logic
                 localStorage.setItem('theme', 'system');
                 if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
                     root.classList.add('dark');
@@ -107,20 +104,17 @@ const App: React.FC = () => {
             }
         };
 
-        applyTheme();
+        updateTheme();
 
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const handleChange = () => {
-            if (theme === Theme.SYSTEM) {
-                applyTheme();
-            }
+        const handleSystemThemeChange = () => {
+            if (theme === Theme.SYSTEM) updateTheme();
         };
 
-        mediaQuery.addEventListener('change', handleChange);
-        return () => mediaQuery.removeEventListener('change', handleChange);
+        mediaQuery.addEventListener('change', handleSystemThemeChange);
+        return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
     }, [theme]);
 
-    
     const handleVoiceInput = useCallback(() => {
         if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
             setError('Speech recognition is not supported by your browser.');
@@ -139,9 +133,8 @@ const App: React.FC = () => {
         recognition.interimResults = true;
         recognition.lang = 'en-US'; 
 
-        let finalTranscript = '';
-
         recognition.onresult = (event) => {
+            let finalTranscript = '';
             let interimTranscript = '';
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
@@ -150,7 +143,7 @@ const App: React.FC = () => {
                     interimTranscript += event.results[i][0].transcript;
                 }
             }
-            setUserInput(userInput + finalTranscript + interimTranscript);
+            setUserInput(prev => prev + finalTranscript + interimTranscript);
         };
         
         recognition.onstart = () => setIsRecording(true);
@@ -160,8 +153,7 @@ const App: React.FC = () => {
         recognition.start();
         recognitionRef.current = recognition;
         
-    }, [isRecording, userInput]);
-
+    }, [isRecording]);
 
     const handleSubmit = async () => {
         if (!userInput.trim()) {
@@ -207,7 +199,7 @@ const App: React.FC = () => {
                                 value={userInput}
                                 onChange={(e) => setUserInput(e.target.value)}
                                 placeholder="Type or paste your idea here..."
-                                className="w-full h-48 p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                                className="w-full h-48 p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow outline-none"
                             />
                         ) : (
                            <div className="w-full h-48 p-3 border border-gray-300 dark:border-gray-600 rounded-md flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900/50">
@@ -221,7 +213,7 @@ const App: React.FC = () => {
                                <textarea
                                   value={userInput}
                                   readOnly
-                                  className="w-full h-20 mt-2 p-2 bg-white dark:bg-gray-800 border-t dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300"
+                                  className="w-full h-20 mt-2 p-2 bg-white dark:bg-gray-800 border-t dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 outline-none"
                                   placeholder="Voice input will appear here..."
                                />
                            </div>
