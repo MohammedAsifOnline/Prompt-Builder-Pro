@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { GeminiResponse, PromptType } from '../types';
 
@@ -38,8 +39,14 @@ export const generatePromptAndTranslation = async (
   targetLanguage: string,
   promptType: PromptType,
 ): Promise<GeminiResponse> => {
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey || apiKey === "undefined" || apiKey === "") {
+    throw new Error("API Key is missing. Ensure GEMINI_API_KEY is set in Hostinger and the app is re-built.");
+  }
+
   // Creating a new instance right before making an API call to ensure it uses the most up-to-date key.
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const systemInstruction = getSystemInstruction(promptType, targetLanguage);
@@ -66,8 +73,11 @@ export const generatePromptAndTranslation = async (
     return JSON.parse(result.trim()) as GeminiResponse;
   } catch (error) {
     console.error("Gemini API Error:", error);
-    if (error instanceof Error && error.message.includes("entity was not found")) {
-        throw new Error("API Key issue: Project or model not found. Please check your billing and API Key.");
+    if (error instanceof Error) {
+        if (error.message.includes("entity was not found")) {
+            throw new Error("API Key issue: Project or model not found. Check billing status.");
+        }
+        throw error;
     }
     throw new Error("AI Reasoning failed. Check API Key or Connection.");
   }
