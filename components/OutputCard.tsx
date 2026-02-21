@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import IconButton from './IconButton';
+import Markdown from 'react-markdown';
 
 const CopyIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -50,7 +51,9 @@ const OutputCard: React.FC<OutputCardProps> = ({ title, content, borderColor = '
             className={`transition-all duration-200 ${isCopied ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'}`}
         />
       </div>
-      <div className="p-4 min-h-[100px] text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{content}</div>
+      <div className="p-4 min-h-[100px] text-gray-800 dark:text-gray-200 prose dark:prose-invert max-w-none">
+        <Markdown>{content}</Markdown>
+      </div>
     </div>
   );
 };

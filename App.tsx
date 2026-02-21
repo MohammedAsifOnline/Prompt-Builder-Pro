@@ -133,17 +133,15 @@ const App: React.FC = () => {
         recognition.interimResults = true;
         recognition.lang = 'en-US'; 
 
+        const baseText = userInput;
+
         recognition.onresult = (event) => {
-            let finalTranscript = '';
-            let interimTranscript = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    finalTranscript += event.results[i][0].transcript;
-                } else {
-                    interimTranscript += event.results[i][0].transcript;
-                }
+            let sessionTranscript = '';
+            for (let i = 0; i < event.results.length; ++i) {
+                sessionTranscript += event.results[i][0].transcript;
             }
-            setUserInput(prev => prev + finalTranscript + interimTranscript);
+            const separator = baseText && !baseText.endsWith(' ') && sessionTranscript ? ' ' : '';
+            setUserInput(baseText + separator + sessionTranscript);
         };
         
         recognition.onstart = () => setIsRecording(true);
@@ -153,7 +151,7 @@ const App: React.FC = () => {
         recognition.start();
         recognitionRef.current = recognition;
         
-    }, [isRecording]);
+    }, [isRecording, userInput]);
 
     const handleSubmit = async () => {
         if (!userInput.trim()) {
